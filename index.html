@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pedantry, the Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Limelight&family=Josefin+Sans:wght@400;600;700&family=Special+Elite&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="vignette"></div>
+
+<div id="hud">
+  <div id="dot"></div>
+  <div id="prompt"></div>
+  <div id="pa"><div class="paHead">📢 DR PEDANT, OVER THE TANNOY</div><div id="paTxt"></div></div>
+  <div id="toast"></div>
+  <div id="forms"></div>
+  <div id="hintKeys"><kbd>WASD</kbd> walk · <kbd>E</kbd> talk · <kbd>Esc</kbd> pause</div>
+</div>
+
+<div id="touch">
+  <div id="joy"><div id="joyKnob"></div></div>
+  <button class="btn tbtn" id="tUse">USE</button>
+  <button class="btn small tbtn" id="tPause">❚❚</button>
+</div>
+
+<div id="dlg">
+  <canvas id="dlgFace" width="256" height="192"></canvas>
+  <div class="inner"><div id="dlgWho"></div><div id="dlgTxt"></div><div id="dlgOpts"></div></div>
+</div>
+
+<!-- TITLE -->
+<div class="screen on" id="sTitle">
+  <div class="deco-top"></div>
+  <div class="logo">PEDANTRY</div>
+  <div class="logo-sub">THE GAME</div>
+  <div class="tagline">The Pedantico Institute for Young People Who Wish to Speak Properly. Correcting others since 1842.</div>
+  <div class="cols">
+    <div class="panel">
+      <h3>DEPARTMENTS</h3>
+      <div class="presets"><button class="btn small" id="allDepts">All</button><button class="btn small" id="noDepts">None</button></div>
+      <div class="ticks" id="deptTicks"></div>
+    </div>
+    <div class="panel">
+      <h3>GAMES</h3>
+      <div class="ticks" id="gameTicks"></div>
+      <h3>QUESTIONS PER TEST</h3>
+      <div class="presets" id="perTest"></div>
+      <h3>SOUND</h3>
+      <div class="ticks">
+        <label class="tick"><input type="checkbox" id="soundTick"><span class="box"></span><span>Sound effects</span></label>
+        <label class="tick"><input type="checkbox" id="voiceTick"><span class="box"></span><span>Character voices<span class="ch">Reads every line aloud</span></span></label>
+      </div>
+      <h3>GRAPHICS</h3>
+      <div class="presets" id="gfx">
+        <button class="btn small" data-q="school">School PC</button>
+        <button class="btn small" data-q="low">Standard</button>
+        <button class="btn small" data-q="high">High</button>
+      </div>
+    </div>
+  </div>
+  <div class="status" id="setupStatus"></div>
+  <div class="row-c"><button class="btn big gold" id="enterBtn">Enter the Institute</button></div>
+  <div class="row-c quick">
+    <span class="qlabel">Quick play:</span>
+    <button class="btn" data-quick="gap">Fill the Gap</button>
+    <button class="btn" data-quick="pen">Red Pen</button>
+    <button class="btn" data-quick="desk">Rejection Desk · 60s</button>
+    <button class="btn" data-quick="mix">Mixed bag</button>
+  </div>
+  <div class="controls-line">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · mouse: look · <kbd>Shift</kbd> run · <kbd>E</kbd> or click: talk · <kbd>1</kbd>–<kbd>4</kbd> answer · <kbd>Esc</kbd> pause<br>
+    On a tablet: move with the left stick, drag to look, tap USE.
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen" id="sIntro">
+  <div class="story">
+    <div class="memo">PEDANTICO INSTITUTE · INTERNAL MEMO</div>
+    <h2>Welcome, Young Person 4471</h2>
+    <p>Someone heard you say "less biscuits" at lunch. They reported you. You have been sent to the Pedantico Institute for Young People Who Wish to Speak Properly, three miles under the sea, where nobody says "could of" and gets away with it.</p>
+    <p id="introDepts"></p>
+    <p>Each department is run by a member of staff: a butler, a duchess, a professor and worse. Each one has a test. Pass the test and they stamp your form. When every lamp above the lift at the end of the hall is green, you may leave.</p>
+    <p>Dr Pedant is watching. He is always watching. He has nothing else to do.</p>
+    <button class="btn big gold" id="introBtn">Begin</button>
+  </div>
+</div>
+
+<!-- RULE CARD -->
+<div class="screen" id="sRules"><div class="story rules" id="rulesBody"></div></div>
+
+<!-- QUIZ -->
+<div class="screen" id="sQuiz"><div class="quiz" id="quiz"></div></div>
+
+<!-- RESULT (after a test or a quick play) -->
+<div class="screen" id="sResult"><div class="story" id="resultBody"></div></div>
+
+<!-- PAUSE -->
+<div class="screen" id="sPause">
+  <div class="story">
+    <h2>Paused</h2>
+    <p id="pauseInfo"></p>
+    <div class="col-c">
+      <button class="btn big" id="resumeBtn">Back to the Institute</button>
+      <button class="btn big" id="quitBtn">Quit to the title screen</button>
+    </div>
+  </div>
+</div>
+
+<!-- CERTIFICATE -->
+<div class="screen" id="sEnd">
+  <div class="cert-wrap">
+    <div class="cert-controls">
+      <input id="certName" maxlength="40" placeholder="Type your name for the certificate">
+      <button class="btn" id="printBtn">Print certificate</button>
+      <button class="btn" id="titleBtn">Back to the title screen</button>
+    </div>
+    <div class="cert" id="cert"></div>
+  </div>
+</div>
+
+<div id="loading"><div>DESCENDING TO THE INSTITUTE…</div><div class="lsub" id="loadSub">Polishing the brass. Correcting the signage.</div></div>
+<div id="noGL">The Institute needs WebGL. Try a recent version of Chrome, Edge, Firefox or Safari. The quick play games on the title screen still work.</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
