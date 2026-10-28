@@ -4,6 +4,7 @@
 // Each one: makeCharacter(dept) → { root, faceCanvas (portrait), setExpr, talk, update, voice, pitch }
 // ════════════════════════════════════════════════════════════════
 import * as THREE from 'three';
+import { portraitArt } from './textures.js';
 
 // Who looks like what
 const LOOK = {
@@ -120,6 +121,27 @@ function paintFeatures(x, L, expr, t, mouthOpen, cx, cy, s) {
 // Portrait: a flat cartoon of the whole head for the dialogue box and the test screen
 function paintPortrait(c, L, id, expr, t, mouthOpen) {
   const x = c.getContext('2d'), W = c.width, H = c.height;
+  const art = portraitArt(id);
+  if (art) {
+    x.clearRect(0, 0, W, H);
+    const motion = expr === 'talk' ? Math.sin(t * 7) * 0.7 : 0;
+    x.save(); x.beginPath(); x.rect(0, 0, W, H); x.clip();
+    x.drawImage(art.image, art.sx, art.sy, art.sw, art.sh, 0, motion, W, H);
+    x.restore();
+    // Expression indicators preserve feedback without painting over the artwork.
+    const accents = { happy: '#8de0a3', appalled: '#f28765', smug: '#eac97a', talk: '#8ddbd6' };
+    x.strokeStyle = accents[expr] || '#a9874f'; x.lineWidth = 3;
+    x.strokeRect(2, 2, W - 4, H - 4);
+    if (expr === 'talk') {
+      x.fillStyle = '#8ddbd6';
+      for (let i = 0; i < 5; i++) {
+        const h = 3 + Math.abs(Math.sin(t * 10 + i)) * 12;
+        x.fillRect(W - 36 + i * 5, H - 9 - h, 3, h);
+      }
+    }
+    return;
+  }
+
   const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3a2c1c'); g.addColorStop(1, '#120d08');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   const cx = W / 2, cy = H * 0.58, s = H * 0.36;

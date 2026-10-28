@@ -19,7 +19,23 @@ export function tex(c, repeat = [1, 1], srgb = true) {
 }
 
 export const IMG = {};
+let artReady;
+export function loadArt() {
+  return artReady ||= Promise.all(['staff', 'propaganda'].map(async name => {
+    IMG[name] = await loadImg(`assets/art/${name}.webp`);
+  }));
+}
+// Also load for quick play, which does not enter the 3D world.
+loadArt();
+export function portraitArt(id) {
+  const ids = ['host', 'quant', 'pron', 'homo', 'conf', 'apos', 'crime', 'myth', 'pedant'];
+  const i = ids.indexOf(id), image = IMG.staff;
+  if (!image || i < 0) return null;
+  return { image, sx: (i % 3) * image.width / 3, sy: Math.floor(i / 3) * image.height / 3,
+    sw: image.width / 3, sh: image.height / 3 };
+}
 export async function loadPhotos() {
+  await loadArt();
   const [marble, wood, bronze] = await Promise.all(['marble', 'wood', 'bronze'].map(n => loadImg(`assets/textures/${n}.webp`)));
   Object.assign(IMG, { marble, wood, bronze });
 }
@@ -122,33 +138,38 @@ export function poster(lines, o = {}) {
   const bg = o.bg || '#b8322a', fg = o.fg || '#f3e6c4', ink = o.ink || '#1a1410';
   x.fillStyle = '#efe2c0'; x.fillRect(0, 0, W, H);
   x.fillStyle = bg; x.fillRect(22, 22, W - 44, H - 44);
-  // sunburst
-  x.save(); x.beginPath(); x.rect(22, 22, W - 44, H - 44); x.clip();
-  const cx = W / 2, cy = H * 0.62;
-  for (let i = 0; i < 24; i++) {
-    const a0 = i / 24 * Math.PI * 2, a1 = (i + 0.5) / 24 * Math.PI * 2;
-    x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + Math.cos(a0) * 900, cy + Math.sin(a0) * 900); x.lineTo(cx + Math.cos(a1) * 900, cy + Math.sin(a1) * 900);
-    x.fillStyle = 'rgba(0,0,0,0.12)'; x.fill();
+  // Printed illustration occupies a dedicated window below the headline.
+  const title = lines.join(' ');
+  const art = /AFFECT|EFFECT|LITERALLY/.test(title) ? 2
+    : /WANTED|COULD|ALOT|APPLE|OWNER|DOG/.test(title) ? 3
+    : /THEIR|THERE|YOUR|WHOM|MYSELF|PERSON|WELCOME/.test(title) ? 1 : 0;
+  if (IMG.propaganda) {
+    const im = IMG.propaganda, sw = im.width / 2, sh = im.height / 2;
+    x.drawImage(im, (art % 2) * sw, Math.floor(art / 2) * sh, sw, sh, 38, 300, 436, 390);
+  } else {
+    x.fillStyle = fg; x.textAlign = 'center'; x.font = 'bold 150px Georgia';
+    x.fillText(o.symbol || '¶', W / 2, 540);
   }
-  x.beginPath(); x.arc(cx, cy, 120, 0, Math.PI * 2); x.fillStyle = fg; x.globalAlpha = 0.9; x.fill(); x.globalAlpha = 1;
-  // a symbol in the circle
-  x.fillStyle = bg; x.font = 'bold 150px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillText(o.symbol || '¶', cx, cy + 8);
-  x.restore();
+  x.strokeStyle = fg; x.lineWidth = 2; x.strokeRect(34, 296, 444, 398);
   x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
   x.font = '600 26px "Josefin Sans", Futura, "Trebuchet MS", sans-serif';
   x.fillText(o.top || 'PEDANTICO INSTITUTE', W / 2, 78);
   x.fillRect(110, 92, W - 220, 3);
   // headline: fit each line to the width
-  let y = 160;
+  let y = 144;
+  const lineStep = Math.min(62, 138 / lines.length);
   for (const ln of lines) {
-    let size = 64;
+    let size = Math.min(58, lineStep - 5);
     do { x.font = `700 ${size}px Limelight, "Poiret One", Georgia, serif`; size -= 2; } while (x.measureText(ln).width > W - 90 && size > 18);
     x.lineWidth = 6; x.strokeStyle = ink; x.strokeText(ln, W / 2, y); x.fillText(ln, W / 2, y);
-    y += size + 14;
+    y += lineStep;
   }
   x.font = 'italic 24px Georgia, serif'; x.fillStyle = fg;
-  if (o.foot) x.fillText(o.foot, W / 2, H - 52);
+  if (o.foot) {
+    let fs = 24;
+    while (fs > 14 && x.measureText(o.foot).width > W - 68) { x.font = `italic ${--fs}px Georgia, serif`; }
+    x.fillText(o.foot, W / 2, H - 46);
+  }
   grain(x, W, H, 26, lines.join('').length);
   // wear
   const r = seeded(lines.join('').length + 3);
@@ -163,6 +184,17 @@ export function neon(text, color = '#ff4f9a', sub = '') {
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   x.strokeStyle = '#b8924c'; x.lineWidth = 10; x.strokeRect(8, 8, W - 16, H - 16);
   x.lineWidth = 2; x.strokeRect(22, 22, W - 44, H - 44);
+  // Riveted enamel, stepped deco corners and subtle brushed patina.
+  for (const px of [38, W - 38]) for (const py of [38, H - 38]) {
+    x.fillStyle = '#bb9555'; x.beginPath(); x.arc(px, py, 6, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = '#312419'; x.lineWidth = 2; x.beginPath(); x.moveTo(px - 3, py); x.lineTo(px + 3, py); x.stroke();
+  }
+  x.strokeStyle = '#8c6c3a'; x.lineWidth = 2;
+  for (const side of [-1, 1]) {
+    x.beginPath(); x.moveTo(W / 2 + side * 80, 34); x.lineTo(W / 2 + side * 40, 34);
+    x.lineTo(W / 2 + side * 28, 25); x.lineTo(W / 2, 25); x.stroke();
+  }
+  grain(x, W, H, 12, text.length);
   x.textAlign = 'center'; x.textBaseline = 'middle';
   let size = 110;
   do { x.font = `${size}px Limelight, "Poiret One", Georgia, serif`; size -= 4; } while (x.measureText(text).width > W - 120 && size > 30);
@@ -170,7 +202,7 @@ export function neon(text, color = '#ff4f9a', sub = '') {
   for (const [blur, col] of [[40, color], [18, color], [6, color], [0, '#fff8ee']]) {
     x.shadowColor = color; x.shadowBlur = blur; x.fillStyle = col; x.fillText(text, W / 2, ty);
   }
-  if (sub) { x.shadowBlur = 8; x.font = '600 34px "Josefin Sans", Futura, sans-serif'; x.fillStyle = '#e9d9b4'; x.fillText(sub, W / 2, H * 0.8); }
+  if (sub) { x.shadowBlur = 8; x.font = '600 34px "Josefin Sans", Futura, sans-serif'; x.fillStyle = '#e9d9b4'; x.fillText(sub, W / 2, H * 0.8, W - 120); }
   return c;
 }
 // Brass plaque with engraved text
